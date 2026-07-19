@@ -26,4 +26,11 @@ class SpeechProvider(Protocol):
 
 
 class VisualProvider(Protocol):
-    def generate(self, prompt: str, output_path: str) -> str: ...
+    def generate(
+        self,
+        prompt: str,
+        output_path: Path,
+        width: int,
+        height: int,
+        label: str = "",
+    ) -> Path: ...
