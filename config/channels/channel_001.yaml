@@ -1,0 +1,37 @@
+channel:
+  id: channel_001
+  name: First Channel
+  language: ko-KR
+  timezone: Asia/Seoul
+
+content:
+  niche: undecided
+  audience: 일반 시청자
+  tone: 흥미롭고 이해하기 쉬운 설명체
+  formats:
+    shorts:
+      enabled: true
+      duration_seconds: 45
+      aspect_ratio: "9:16"
+      resolution: [1080, 1920]
+    longform:
+      enabled: false
+      aspect_ratio: "16:9"
+      resolution: [1920, 1080]
+
+brand:
+  primary_color: "#FFFFFF"
+  accent_color: "#FFD400"
+  font: assets/fonts/README.md
+  logo: null
+
+voice:
+  provider: openai
+  voice: marin
+  speed: 1.0
+
+publishing:
+  privacy: private
+  category_id: "22"
+  made_for_kids: false
+  default_tags: []

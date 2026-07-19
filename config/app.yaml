@@ -1,0 +1,89 @@
+app:
+  name: ai-youtube-automation
+  default_channel: channel_001
+  job_state_backend: json
+
+pipeline:
+  human_review:
+    script: true
+    before_publish: true
+  retry:
+    attempts: 3
+    wait_seconds: 5
+  upload:
+    enabled: false
+    default_privacy: private
+
+providers:
+  text: openai
+  speech: openai
+  image: pollo
+  video: pollo
+  editor: ffmpeg
+  upload: youtube
+
+script_generation:
+  model: gpt-5.6-terra
+  max_retries: 3
+  timeout_seconds: 60
+  output_language: ko-KR
+
+scene_generation:
+  model: gpt-5.6-terra
+  max_retries: 3
+  timeout_seconds: 60
+  image_prompt_language: en
+  video_prompt_language: en
+  subtitle_language: ko-KR
+  visual_style: cinematic editorial illustration, realistic lighting, high detail
+  max_subtitle_characters: 45
+
+speech_generation:
+  model: gpt-4o-mini-tts
+  voice: marin
+  response_format: mp3
+  max_input_characters: 4096
+  max_retries: 3
+  timeout_seconds: 120
+  instructions: >-
+    자연스러운 한국어 내레이션으로 말하세요. 명확하고 흥미로운 어조를 유지하고,
+    문장 사이에는 짧게 쉬며, 지나치게 과장하거나 빠르게 읽지 마세요.
+
+editing:
+  engine: ffmpeg
+  fps: 30
+  video_codec: libx264
+  audio_codec: aac
+  audio_bitrate: 192k
+  pixel_format: yuv420p
+  transition:
+    type: fade
+    duration_seconds: 0.35
+  subtitle:
+    font_name: Arial
+    font_size: 18
+    primary_color: "&H00FFFFFF"
+    outline_color: "&H00000000"
+    outline: 2
+    margin_vertical: 120
+  audio:
+    narration_volume: 1.0
+    bgm_volume: 0.12
+    sound_effect_volume: 0.35
+
+publishing_generation:
+  model: gpt-5.6-terra
+  max_retries: 3
+  timeout_seconds: 60
+  ai_disclosure: 이 영상의 음성 및 일부 시각 자료는 AI로 생성되었습니다.
+  thumbnail:
+    width: 1280
+    height: 720
+    max_file_bytes: 2000000
+    jpeg_quality: 90
+    max_text_characters: 28
+
+youtube_upload:
+  privacy: private
+  notify_subscribers: false
+  oauth_scope: https://www.googleapis.com/auth/youtube.upload

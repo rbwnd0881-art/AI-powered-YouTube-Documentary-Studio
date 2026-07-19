@@ -1,0 +1,18 @@
+{
+  "narration_path": "../../storage/channel_001/first-voice.mp3",
+  "bgm_path": "../music/background.mp3",
+  "scenes": [
+    {
+      "scene_number": 1,
+      "media_path": "../../storage/channel_001/media/scene_001.png",
+      "sound_effect_path": "../sfx/whoosh.mp3",
+      "sound_effect_offset_seconds": 0.0
+    },
+    {
+      "scene_number": 2,
+      "media_path": "../../storage/channel_001/media/scene_002.mp4",
+      "sound_effect_path": null,
+      "sound_effect_offset_seconds": 0.0
+    }
+  ]
+}

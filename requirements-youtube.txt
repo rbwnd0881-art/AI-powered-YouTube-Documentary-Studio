@@ -1,0 +1,4 @@
+-r requirements.txt
+cryptography>=38,<44
+google-api-python-client>=2.160,<3
+google-auth-oauthlib>=1.2,<2
