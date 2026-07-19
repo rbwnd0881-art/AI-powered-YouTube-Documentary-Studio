@@ -5,7 +5,9 @@ import shutil
 import subprocess
 import tempfile
 from pathlib import Path
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Optional, Union
+
+from PIL import Image, ImageDraw, ImageFont
 
 from ai_youtube.domain.models import EditManifest, ScenePlan
 
@@ -117,8 +119,83 @@ class FFmpegEditor:
         path.write_text("\n".join(blocks), encoding="utf-8")
 
     @staticmethod
-    def _escape_filter_path(path: Path) -> str:
-        return str(path.resolve()).replace("\\", "\\\\").replace(":", "\\:").replace("'", "\\'")
+    def _subtitle_font(
+        font_size: int,
+    ) -> Union[ImageFont.FreeTypeFont, ImageFont.ImageFont]:
+        candidates = (
+            Path("/System/Library/Fonts/AppleSDGothicNeo.ttc"),
+            Path("/System/Library/Fonts/Supplemental/Arial.ttf"),
+        )
+        for candidate in candidates:
+            if candidate.is_file():
+                return ImageFont.truetype(str(candidate), size=font_size)
+        return ImageFont.load_default()
+
+    def _write_subtitle_overlays(
+        self,
+        scene_plan: ScenePlan,
+        width: int,
+        height: int,
+        work_dir: Path,
+    ) -> list[Path]:
+        style = self.config["subtitle"]
+        font_size = max(int(style["font_size"]) * 2, 36)
+        font = self._subtitle_font(font_size)
+        margin_vertical = int(style["margin_vertical"])
+        max_width = int(width * 0.86)
+        draw_probe = ImageDraw.Draw(Image.new("RGBA", (1, 1)))
+        overlays = []
+
+        for scene in scene_plan.scenes:
+            words = scene.subtitle.strip().split()
+            lines: list[str] = []
+            current = ""
+            for word in words:
+                candidate = f"{current} {word}".strip()
+                box = draw_probe.textbbox((0, 0), candidate, font=font, stroke_width=2)
+                if current and box[2] - box[0] > max_width:
+                    lines.append(current)
+                    current = word
+                else:
+                    current = candidate
+            if current:
+                lines.append(current)
+            text = "\n".join(lines or [scene.subtitle.strip()])
+
+            overlay = Image.new("RGBA", (width, height), (0, 0, 0, 0))
+            draw = ImageDraw.Draw(overlay)
+            bbox = draw.multiline_textbbox(
+                (0, 0), text, font=font, spacing=10, align="center", stroke_width=2
+            )
+            text_width = bbox[2] - bbox[0]
+            text_height = bbox[3] - bbox[1]
+            x = (width - text_width) // 2
+            y = height - margin_vertical - text_height
+            padding_x, padding_y = 28, 18
+            draw.rounded_rectangle(
+                (
+                    x - padding_x,
+                    y - padding_y,
+                    x + text_width + padding_x,
+                    y + text_height + padding_y,
+                ),
+                radius=18,
+                fill=(0, 0, 0, 150),
+            )
+            draw.multiline_text(
+                (x, y),
+                text,
+                font=font,
+                fill=(255, 255, 255, 255),
+                spacing=10,
+                align="center",
+                stroke_width=2,
+                stroke_fill=(0, 0, 0, 255),
+            )
+            path = work_dir / f"subtitle_{scene.scene_number:03d}.png"
+            overlay.save(path, format="PNG")
+            overlays.append(path)
+        return overlays
 
     def _build_command(
         self,
@@ -135,6 +212,9 @@ class FFmpegEditor:
         fps = int(self.config["fps"])
         durations = self._allocate_durations(scene_plan, narration_duration)
         scene_media = {item.scene_number: item for item in manifest.scenes}
+        subtitle_overlays = self._write_subtitle_overlays(
+            scene_plan, width, height, work_dir
+        )
 
         command = [self.ffmpeg_binary, "-y"]
         clip_durations = []
@@ -147,7 +227,13 @@ class FFmpegEditor:
             else:
                 command.extend(["-stream_loop", "-1", "-t", f"{clip_duration:.3f}", "-i", str(media.media_path)])
 
-        narration_index = len(scene_plan.scenes)
+        scene_count = len(scene_plan.scenes)
+        for index, subtitle_overlay in enumerate(subtitle_overlays):
+            command.extend(
+                ["-loop", "1", "-t", f"{clip_durations[index]:.3f}", "-i", str(subtitle_overlay)]
+            )
+
+        narration_index = scene_count * 2
         command.extend(["-i", str(manifest.narration_path)])
         bgm_index: Optional[int] = None
         if manifest.bgm_path:
@@ -167,7 +253,15 @@ class FFmpegEditor:
         for index, clip_duration in enumerate(clip_durations):
             filters.append(
                 f"[{index}:v]scale={width}:{height}:force_original_aspect_ratio=increase,"
-                f"crop={width}:{height},fps={fps},trim=duration={clip_duration:.3f},setpts=PTS-STARTPTS[v{index}]"
+                f"crop={width}:{height},fps={fps},trim=duration={clip_duration:.3f},"
+                f"setpts=PTS-STARTPTS[base{index}]"
+            )
+            filters.append(
+                f"[{scene_count + index}:v]format=rgba,fps={fps},"
+                f"trim=duration={clip_duration:.3f},setpts=PTS-STARTPTS[sub{index}]"
+            )
+            filters.append(
+                f"[base{index}][sub{index}]overlay=0:0:format=auto[v{index}]"
             )
 
         video_label = "v0"
@@ -181,18 +275,7 @@ class FFmpegEditor:
             video_label = output_label
             cumulative += durations[index]
 
-        subtitle_path = work_dir / "subtitles.srt"
-        self._write_srt(scene_plan, durations, subtitle_path)
-        style = self.config["subtitle"]
-        force_style = (
-            f"FontName={style['font_name']},FontSize={style['font_size']},"
-            f"PrimaryColour={style['primary_color']},OutlineColour={style['outline_color']},"
-            f"Outline={style['outline']},Alignment=2,MarginV={style['margin_vertical']}"
-        )
-        escaped_subtitle_path = self._escape_filter_path(subtitle_path)
-        filters.append(
-            f"[{video_label}]subtitles='{escaped_subtitle_path}':force_style='{force_style}'[videoout]"
-        )
+        filters.append(f"[{video_label}]null[videoout]")
 
         audio = self.config["audio"]
         filters.append(

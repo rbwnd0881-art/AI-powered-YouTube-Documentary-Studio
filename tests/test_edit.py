@@ -99,3 +99,12 @@ def test_render_builds_ffmpeg_pipeline(tmp_path, monkeypatch):
     assert "-filter_complex_script" in ffmpeg_command
     assert "-loop" in ffmpeg_command
     assert "-stream_loop" in ffmpeg_command
+
+
+def test_subtitle_overlays_do_not_require_libass(tmp_path):
+    plan = ScenePlan.model_validate(SCENE_PLAN)
+    editor = FFmpegEditor(load_app_config()["editing"])
+    overlays = editor._write_subtitle_overlays(plan, 1080, 1920, tmp_path)
+
+    assert len(overlays) == 2
+    assert all(path.is_file() and path.stat().st_size > 0 for path in overlays)
