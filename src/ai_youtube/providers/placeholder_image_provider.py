@@ -51,12 +51,12 @@ class PlaceholderImageProvider:
             draw.ellipse((x - radius, y - radius, x + radius, y + radius), fill=color)
 
         overlay_height = max(130, height // 9)
-        draw.rectangle((0, height - overlay_height, width, height), fill=(0, 0, 0, 130))
+        draw.rectangle((0, 0, width, overlay_height), fill=(0, 0, 0, 130))
         display_label = label.strip() or "MVP PLACEHOLDER"
         font = self._font(max(30, width // 24))
         bbox = draw.textbbox((0, 0), display_label, font=font)
         x = (width - (bbox[2] - bbox[0])) // 2
-        y = height - overlay_height + (overlay_height - (bbox[3] - bbox[1])) // 2
+        y = (overlay_height - (bbox[3] - bbox[1])) // 2
         draw.text((x, y), display_label, font=font, fill=(255, 255, 255, 235))
 
         output_path = output_path.resolve()
