@@ -1,5 +1,6 @@
 import json
 import shutil
+from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
@@ -12,7 +13,7 @@ from ai_youtube.config import (
     load_channel_config,
     require_openai_api_key,
 )
-from ai_youtube.pipeline.orchestrator import create_job_plan
+from ai_youtube.pipeline.orchestrator import MvpPipeline, create_job_plan
 from ai_youtube.pipeline.stages.edit import YoutubeEditService
 from ai_youtube.pipeline.stages.publish import ThumbnailRenderer, YoutubePublishingService
 from ai_youtube.pipeline.stages.scenes import YoutubeSceneService
@@ -25,6 +26,7 @@ from ai_youtube.providers.openai_provider import (
     SpeechGenerationError,
 )
 from ai_youtube.providers.ffmpeg_provider import FFmpegEditor, VideoEditingError
+from ai_youtube.providers.placeholder_image_provider import PlaceholderImageProvider
 from ai_youtube.providers.youtube_provider import (
     YoutubeOAuth,
     YoutubeUploader,
@@ -57,6 +59,61 @@ def pipeline(
     channel_config = load_channel_config(channel)
     plan = create_job_plan(channel_config, idea)
     console.print_json(data=plan)
+
+
+@app.command("mvp-video")
+def mvp_video(
+    topic: str = typer.Option(..., "--topic", "-t", help="영상 주제"),
+    channel: str = typer.Option("channel_001", help="채널 설정 ID"),
+    job_dir: Optional[Path] = typer.Option(
+        None, help="작업 결과 폴더. 같은 폴더를 지정하면 완료된 단계를 재사용"
+    ),
+) -> None:
+    """Generate a complete MVP video from one topic."""
+    try:
+        settings = Settings()
+        app_config = load_app_config()
+        channel_config = load_channel_config(channel)
+        script_config = app_config["script_generation"]
+        speech_config = app_config["speech_generation"]
+        api_key = require_openai_api_key(settings)
+        if job_dir is None:
+            timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+            job_dir = settings.storage_dir / channel / "jobs" / timestamp
+
+        text_provider = OpenAITextProvider(
+            api_key=api_key,
+            model=settings.openai_text_model or script_config["model"],
+            timeout_seconds=float(script_config["timeout_seconds"]),
+            max_retries=int(script_config["max_retries"]),
+        )
+        speech_provider = OpenAISpeechProvider(
+            api_key=api_key,
+            model=settings.openai_tts_model or speech_config["model"],
+            timeout_seconds=float(speech_config["timeout_seconds"]),
+            max_retries=int(speech_config["max_retries"]),
+        )
+        result = MvpPipeline(
+            text_provider=text_provider,
+            speech_provider=speech_provider,
+            visual_provider=PlaceholderImageProvider(),
+            editor=FFmpegEditor(app_config["editing"]),
+        ).run(topic, job_dir, channel_config, app_config)
+
+        console.print(f"[green]MVP 영상 생성 완료:[/green] {result}")
+        console.print(f"[blue]중간 결과 폴더:[/blue] {job_dir.resolve()}")
+        console.print("[yellow]현재 비주얼은 무료 임시 이미지입니다.[/yellow]")
+    except (
+        ValueError,
+        FileNotFoundError,
+        KeyError,
+        OSError,
+        ScriptGenerationError,
+        SpeechGenerationError,
+        VideoEditingError,
+    ) as exc:
+        error_console.print(f"[red]MVP 영상 생성 실패:[/red] {exc}")
+        raise typer.Exit(code=1)
 
 
 @app.command("generate-script")
