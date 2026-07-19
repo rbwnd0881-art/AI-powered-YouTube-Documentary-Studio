@@ -34,3 +34,12 @@ class VisualProvider(Protocol):
         height: int,
         label: str = "",
     ) -> Path: ...
+
+
+class VideoEditor(Protocol):
+    def render(
+        self,
+        scene_plan: BaseModel,
+        manifest: BaseModel,
+        output_path: Path,
+    ) -> Path: ...
