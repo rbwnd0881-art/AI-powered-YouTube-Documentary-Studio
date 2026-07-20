@@ -16,6 +16,8 @@
 - Minimal filename-ordered image-to-MP4 Video Composer
 - Multi-scene image pipeline connecting the existing visual provider factory to the
   existing Video Composer
+- Responses API Script Engine with validated four-scene structured output and
+  localization parameter
 - Verified local FFmpeg render (H.264 video and AAC audio)
 - Unit tests for the implemented pipeline stages
 
@@ -56,11 +58,24 @@
 - Output: `storage/channel_001/jobs/octopus-m3-20260720/shorts-m3.mp4`
 - Tests: 37 passed; Ruff passed
 
+## Latest Script Engine Validation
+
+- Date: 2026-07-20
+- Topic: Why an octopus has three hearts
+- Model and API: `gpt-4o-mini` through the Responses API
+- Result: hook, narration, four ordered scene prompts, title, description, and
+  keywords generated successfully
+- API requests and usage: 1 request, 313 input tokens, 256 output tokens
+- Output: `storage/channel_001/jobs/octopus-m4-20260720/script-m4.json`
+- Tests: 43 passed; Ruff passed
+- Limitation: narration duration is a prompt target until TTS measures actual audio;
+  generated factual claims still require human review
+
 ## Next
 
 1. Add API cost tracking.
 2. Add automated quality checks.
-3. Connect narration and subtitles in a later milestone.
+3. Connect Script Engine output to the M3 pipeline in a later milestone.
 
 ## Human Gates
 

@@ -28,6 +28,12 @@ script_generation:
   timeout_seconds: 60
   output_language: ko-KR
 
+script_engine:
+  model: gpt-4o-mini
+  default_language: en-US
+  target_duration_seconds: [30, 45]
+  timeout_seconds: 60
+
 scene_generation:
   model: gpt-5.6-terra
   max_retries: 3

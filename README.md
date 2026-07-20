@@ -169,6 +169,33 @@ print(result.video_path)
 파일은 원인 확인을 위해 그대로 보존하며, Provider 자체의 기존 재시도 정책 외에
 추가 Retry Engine은 사용하지 않습니다.
 
+## 주제에서 구조화된 Shorts 대본 생성
+
+`ScriptEngine`은 OpenAI Responses API의 구조화 출력을 사용해 Hook, 연속
+내레이션, 네 개의 Scene 프롬프트, YouTube 제목·설명·키워드를 생성합니다.
+기본 모델과 언어는 `config/app.yaml`의 `script_engine`에서 관리하며,
+`OPENAI_SCRIPT_MODEL`로 모델만 변경할 수 있습니다.
+
+```python
+from ai_youtube.config import Settings, load_app_config
+from ai_youtube.script_engine import ScriptEngine
+
+settings = Settings()
+config = load_app_config()["script_engine"]
+engine = ScriptEngine(
+    api_key=settings.openai_api_key,
+    model=settings.openai_script_model or config["model"],
+    timeout_seconds=config["timeout_seconds"],
+    default_language=config["default_language"],
+)
+script = engine.generate("Why an octopus has three hearts")
+print(script.model_dump_json(indent=2))
+```
+
+`language="ko-KR"`처럼 호출별 출력 언어를 지정할 수 있습니다. 현재 30~45초는
+프롬프트 목표이며 실제 재생 시간은 향후 TTS 연결 후 검증해야 합니다. 생성된 사실
+주장은 Research Engine이 추가되기 전까지 사람이 확인해야 합니다.
+
 ## 주제에서 대본 생성
 
 1. `.env.example`을 `.env`로 복사합니다.
