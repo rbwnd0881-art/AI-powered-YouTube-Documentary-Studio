@@ -45,6 +45,12 @@ image_generation:
   max_retries: 3
   timeout_seconds: 120
 
+video_composer:
+  width: 1080
+  height: 1920
+  image_duration_seconds: 3.0
+  fps: 30
+
 speech_generation:
   model: gpt-4o-mini-tts
   voice: marin

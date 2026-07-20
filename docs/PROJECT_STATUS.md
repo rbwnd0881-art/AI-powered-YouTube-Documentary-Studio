@@ -13,6 +13,7 @@
 - OpenAI Images API provider with configurable model, output saving, and documented
   transient-error retries
 - Visual provider factory supporting `openai` and `placeholder`
+- Minimal filename-ordered image-to-MP4 Video Composer
 - Verified local FFmpeg render (H.264 video and AAC audio)
 - Unit tests for the implemented pipeline stages
 
@@ -32,9 +33,18 @@
 - Real API image: generated and saved successfully as a 1080x1920 RGB PNG
 - Output: `storage/channel_001/jobs/openai-image-mvp-20260720/scene_001.png`
 
+## Latest Video Composer Validation
+
+- Date: 2026-07-20
+- Input: previously generated OpenAI image
+- Result: playable 3-second H.264 MP4 generated successfully
+- Resolution and frame rate: 1080x1920 at 30 FPS
+- Ordering: three-color filename-order validation passed
+- Output: `storage/channel_001/jobs/openai-image-mvp-20260720/shorts-m2.mp4`
+
 ## Next
 
-1. Integrate generated images into a full MP4 run.
+1. Generate a complete multi-scene image set for one Shorts job.
 2. Add API cost tracking.
 3. Add automated quality checks.
 
