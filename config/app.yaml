@@ -17,7 +17,7 @@ pipeline:
 providers:
   text: openai
   speech: openai
-  image: pollo
+  image: openai
   video: pollo
   editor: ffmpeg
   upload: youtube
@@ -37,6 +37,13 @@ scene_generation:
   subtitle_language: ko-KR
   visual_style: cinematic editorial illustration, realistic lighting, high detail
   max_subtitle_characters: 45
+
+image_generation:
+  model: gpt-image-2
+  quality: low
+  api_size: 1024x1536
+  max_retries: 3
+  timeout_seconds: 120
 
 speech_generation:
   model: gpt-4o-mini-tts

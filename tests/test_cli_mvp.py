@@ -43,6 +43,8 @@ def test_mvp_video_command_wires_pipeline_without_external_calls(monkeypatch, tm
             "timeout_seconds": 120,
             "max_retries": 3,
         },
+        "providers": {"image": "placeholder"},
+        "image_generation": {},
         "editing": {},
     }
     channel_config = {"channel": {"id": "channel_001"}}
@@ -52,6 +54,11 @@ def test_mvp_video_command_wires_pipeline_without_external_calls(monkeypatch, tm
     monkeypatch.setattr(cli_module, "require_openai_api_key", lambda _: "test-key")
     monkeypatch.setattr(cli_module, "OpenAITextProvider", FakeProvider)
     monkeypatch.setattr(cli_module, "OpenAISpeechProvider", FakeProvider)
+    monkeypatch.setattr(
+        cli_module,
+        "create_visual_provider",
+        lambda *args, **kwargs: FakeProvider(kind="visual"),
+    )
     monkeypatch.setattr(cli_module, "FFmpegEditor", lambda _: object())
     monkeypatch.setattr(cli_module, "MvpPipeline", FakePipeline)
 
@@ -64,5 +71,5 @@ def test_mvp_video_command_wires_pipeline_without_external_calls(monkeypatch, tm
     assert result.exit_code == 0, result.output
     assert captured["run"][0] == "꿈과 기억"
     assert captured["run"][1] == job_dir
-    assert len(captured["providers"]) == 2
+    assert len(captured["providers"]) == 3
     assert (job_dir / "final.mp4").is_file()

@@ -26,7 +26,7 @@ from ai_youtube.providers.openai_provider import (
     SpeechGenerationError,
 )
 from ai_youtube.providers.ffmpeg_provider import FFmpegEditor, VideoEditingError
-from ai_youtube.providers.placeholder_image_provider import PlaceholderImageProvider
+from ai_youtube.providers.factory import create_visual_provider
 from ai_youtube.providers.youtube_provider import (
     YoutubeOAuth,
     YoutubeUploader,
@@ -96,13 +96,19 @@ def mvp_video(
         result = MvpPipeline(
             text_provider=text_provider,
             speech_provider=speech_provider,
-            visual_provider=PlaceholderImageProvider(),
+            visual_provider=create_visual_provider(
+                app_config["providers"]["image"],
+                settings,
+                app_config["image_generation"],
+            ),
             editor=FFmpegEditor(app_config["editing"]),
         ).run(topic, job_dir, channel_config, app_config)
 
         console.print(f"[green]MVP 영상 생성 완료:[/green] {result}")
         console.print(f"[blue]중간 결과 폴더:[/blue] {job_dir.resolve()}")
-        console.print("[yellow]현재 비주얼은 무료 임시 이미지입니다.[/yellow]")
+        console.print(
+            f"[blue]이미지 Provider:[/blue] {app_config['providers']['image']}"
+        )
     except (
         ValueError,
         FileNotFoundError,

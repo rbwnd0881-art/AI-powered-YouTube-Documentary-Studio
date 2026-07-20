@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     openai_text_model: Optional[str] = None
     openai_tts_model: Optional[str] = None
     openai_tts_voice: Optional[str] = None
+    openai_image_model: Optional[str] = None
     pollo_api_key: Optional[str] = None
     youtube_client_secrets_file: Path = Path("secrets/youtube_client_secret.json")
     youtube_token_file: Path = Path("secrets/youtube_token.json")
