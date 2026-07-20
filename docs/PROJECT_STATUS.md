@@ -14,6 +14,8 @@
   transient-error retries
 - Visual provider factory supporting `openai` and `placeholder`
 - Minimal filename-ordered image-to-MP4 Video Composer
+- Multi-scene image pipeline connecting the existing visual provider factory to the
+  existing Video Composer
 - Verified local FFmpeg render (H.264 video and AAC audio)
 - Unit tests for the implemented pipeline stages
 
@@ -42,11 +44,23 @@
 - Ordering: three-color filename-order validation passed
 - Output: `storage/channel_001/jobs/openai-image-mvp-20260720/shorts-m2.mp4`
 
+## Latest Multi-Scene Validation
+
+- Date: 2026-07-20
+- Topic: Why an octopus has three hearts
+- Provider: OpenAI
+- Scenes and API requests: 4 scenes, exactly 4 image requests
+- Images: four ordered 1080x1920 RGB PNG files
+- Result: playable 12-second silent H.264 MP4 at 1080x1920 and 30 FPS
+- FFmpeg full decode: passed
+- Output: `storage/channel_001/jobs/octopus-m3-20260720/shorts-m3.mp4`
+- Tests: 37 passed; Ruff passed
+
 ## Next
 
-1. Generate a complete multi-scene image set for one Shorts job.
-2. Add API cost tracking.
-3. Add automated quality checks.
+1. Add API cost tracking.
+2. Add automated quality checks.
+3. Connect narration and subtitles in a later milestone.
 
 ## Human Gates
 

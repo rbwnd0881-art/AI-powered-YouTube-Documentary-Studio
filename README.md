@@ -134,6 +134,41 @@ video = VideoComposer(load_app_config()["video_composer"]).compose(
 print(video)
 ```
 
+## 여러 Scene 이미지를 Shorts로 연결
+
+`MultiSceneImagePipeline`은 고정된 Scene 프롬프트를 현재 이미지 Provider에 순서대로
+전달하고 `scene_001.png` 형식으로 저장한 뒤 기존 `VideoComposer`를 호출합니다.
+`config/app.yaml`의 `providers.image` 값에 따라 `openai` 또는 `placeholder`를 그대로
+사용합니다. 비어 있지 않은 Job 폴더는 덮어쓰지 않습니다.
+
+```python
+from pathlib import Path
+
+from ai_youtube.config import Settings, load_app_config
+from ai_youtube.pipeline.multi_scene import MultiSceneImagePipeline
+from ai_youtube.providers.factory import create_visual_provider
+from ai_youtube.video_composer import VideoComposer
+
+settings = Settings()
+config = load_app_config()
+pipeline = MultiSceneImagePipeline(
+    create_visual_provider(
+        config["providers"]["image"], settings, config["image_generation"]
+    ),
+    VideoComposer(config["video_composer"]),
+)
+result = pipeline.run(
+    topic="Why an octopus has three hearts",
+    scene_prompts=["hook prompt", "explanation 1", "explanation 2", "conclusion"],
+    job_dir=Path("storage/channel_001/jobs/new-m3-job"),
+)
+print(result.video_path)
+```
+
+이미지 하나라도 실패하면 이후 Scene 처리와 MP4 합성을 중단합니다. 성공한 이미지
+파일은 원인 확인을 위해 그대로 보존하며, Provider 자체의 기존 재시도 정책 외에
+추가 Retry Engine은 사용하지 않습니다.
+
 ## 주제에서 대본 생성
 
 1. `.env.example`을 `.env`로 복사합니다.
